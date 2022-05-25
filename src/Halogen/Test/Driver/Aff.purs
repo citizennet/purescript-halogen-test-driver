@@ -5,6 +5,7 @@ module Halogen.Test.Driver.Aff
   ) where
 
 import Pre
+
 import Control.Monad.Fork.Class as Control.Monad.Fork.Class
 import Control.Monad.Rec.Class as Control.Monad.Rec.Class
 import Control.Parallel as Control.Parallel
@@ -25,18 +26,18 @@ import Halogen.Query.HalogenQ as Halogen.Query.HalogenQ
 import Halogen.Query.Input as Halogen.Query.Input
 import Halogen.Subscription as Halogen.Subscription
 
-type RenderSpec r
-  = { render ::
-        forall s act ps o.
-        (Halogen.Query.Input.Input act -> Effect Unit) ->
-        (Halogen.Component.ComponentSlotBox ps Aff act -> Effect (Halogen.Aff.Driver.State.RenderStateX r)) ->
-        Halogen.HTML.HTML (Halogen.Component.ComponentSlot ps Aff act) act ->
-        Maybe (r s act ps o) ->
-        Effect (r s act ps o)
-    , renderChild :: forall s act ps o. r s act ps o -> r s act ps o
-    , removeChild :: forall s act ps o. r s act ps o -> Effect Unit
-    , dispose :: forall s act ps o. r s act ps o -> Effect Unit
-    }
+type RenderSpec r =
+  { render ::
+      forall s act ps o.
+      (Halogen.Query.Input.Input act -> Effect Unit) ->
+      (Halogen.Component.ComponentSlotBox ps Aff act -> Effect (Halogen.Aff.Driver.State.RenderStateX r)) ->
+      Halogen.HTML.HTML (Halogen.Component.ComponentSlot ps Aff act) act ->
+      Maybe (r s act ps o) ->
+      Effect (r s act ps o)
+  , renderChild :: forall s act ps o. r s act ps o -> r s act ps o
+  , removeChild :: forall s act ps o. r s act ps o -> Effect Unit
+  , dispose :: forall s act ps o. r s act ps o -> Effect Unit
+  }
 
 runUI ::
   forall r f i o.
@@ -65,10 +66,12 @@ runUI emit renderSpec component i = do
     forall s f' act ps i' o'.
     Effect.Ref.Ref Boolean ->
     Effect.Ref.Ref (Halogen.Aff.Driver.State.DriverState r s f' act ps i' o') ->
-    forall a. (f' a -> Aff (Maybe a))
+    forall a.
+    (f' a -> Aff (Maybe a))
   evalDriver disposed ref q =
     liftEffect (Effect.Ref.read disposed)
-      >>= if _ then
+      >>=
+        if _ then
           pure Nothing
         else
           Halogen.Aff.Driver.Eval.evalQ render ref q
@@ -98,48 +101,48 @@ runUI emit renderSpec component i = do
   render lchs var =
     Effect.Ref.read var
       >>= \(Halogen.Aff.Driver.State.DriverState ds) -> do
-          shouldProcessHandlers <- Data.Maybe.isNothing <$> Effect.Ref.read ds.pendingHandlers
-          when shouldProcessHandlers $ Effect.Ref.write (Just Data.List.Nil) ds.pendingHandlers
-          Effect.Ref.write Halogen.Data.Slot.empty ds.childrenOut
-          Effect.Ref.write ds.children ds.childrenIn
-          let
-            -- The following 3 defs are working around a capture bug, see #586
-            pendingHandlers = identity ds.pendingHandlers
+        shouldProcessHandlers <- Data.Maybe.isNothing <$> Effect.Ref.read ds.pendingHandlers
+        when shouldProcessHandlers $ Effect.Ref.write (Just Data.List.Nil) ds.pendingHandlers
+        Effect.Ref.write Halogen.Data.Slot.empty ds.childrenOut
+        Effect.Ref.write ds.children ds.childrenIn
+        let
+          -- The following 3 defs are working around a capture bug, see #586
+          pendingHandlers = identity ds.pendingHandlers
 
-            pendingQueries = identity ds.pendingQueries
+          pendingQueries = identity ds.pendingQueries
 
-            selfRef = identity ds.selfRef
+          selfRef = identity ds.selfRef
 
-            handler :: Halogen.Query.Input.Input act -> Aff Unit
-            handler = Halogen.Aff.Driver.Eval.queueOrRun pendingHandlers <<< void <<< Halogen.Aff.Driver.Eval.evalF render selfRef
+          handler :: Halogen.Query.Input.Input act -> Aff Unit
+          handler = Halogen.Aff.Driver.Eval.queueOrRun pendingHandlers <<< void <<< Halogen.Aff.Driver.Eval.evalF render selfRef
 
-            childHandler :: act -> Aff Unit
-            childHandler = Halogen.Aff.Driver.Eval.queueOrRun pendingQueries <<< handler <<< Halogen.Query.Input.Action
-          rendering <-
-            renderSpec.render
-              (Halogen.Aff.Driver.Eval.handleAff <<< handler)
-              (renderChild lchs childHandler ds.childrenIn ds.childrenOut)
-              (ds.component.render ds.state)
-              ds.rendering
-          children <- Effect.Ref.read ds.childrenOut
-          childrenIn <- Effect.Ref.read ds.childrenIn
-          Halogen.Data.Slot.foreachSlot childrenIn \(Halogen.Aff.Driver.State.DriverStateRef childVar) -> do
-            childDS <- Effect.Ref.read childVar
-            Halogen.Aff.Driver.State.renderStateX_ renderSpec.removeChild childDS
-            finalize lchs childDS
-          flip Effect.Ref.modify_ ds.selfRef
-            $ Halogen.Aff.Driver.State.mapDriverState \ds' ->
-                ds' { rendering = Just rendering, children = children }
-          when shouldProcessHandlers do
-            flip Control.Monad.Rec.Class.tailRecM unit \_ -> do
-              handlers <- Effect.Ref.read pendingHandlers
-              Effect.Ref.write (Just Data.List.Nil) pendingHandlers
-              Data.Traversable.traverse_ (Halogen.Aff.Driver.Eval.handleAff <<< Data.Traversable.traverse_ Control.Monad.Fork.Class.fork <<< Data.List.reverse) handlers
-              mmore <- Effect.Ref.read pendingHandlers
-              if maybe false Data.List.null mmore then
-                Effect.Ref.write Nothing pendingHandlers $> Control.Monad.Rec.Class.Done unit
-              else
-                pure $ Control.Monad.Rec.Class.Loop unit
+          childHandler :: act -> Aff Unit
+          childHandler = Halogen.Aff.Driver.Eval.queueOrRun pendingQueries <<< handler <<< Halogen.Query.Input.Action
+        rendering <-
+          renderSpec.render
+            (Halogen.Aff.Driver.Eval.handleAff <<< handler)
+            (renderChild lchs childHandler ds.childrenIn ds.childrenOut)
+            (ds.component.render ds.state)
+            ds.rendering
+        children <- Effect.Ref.read ds.childrenOut
+        childrenIn <- Effect.Ref.read ds.childrenIn
+        Halogen.Data.Slot.foreachSlot childrenIn \(Halogen.Aff.Driver.State.DriverStateRef childVar) -> do
+          childDS <- Effect.Ref.read childVar
+          Halogen.Aff.Driver.State.renderStateX_ renderSpec.removeChild childDS
+          finalize lchs childDS
+        flip Effect.Ref.modify_ ds.selfRef
+          $ Halogen.Aff.Driver.State.mapDriverState \ds' ->
+              ds' { rendering = Just rendering, children = children }
+        when shouldProcessHandlers do
+          flip Control.Monad.Rec.Class.tailRecM unit \_ -> do
+            handlers <- Effect.Ref.read pendingHandlers
+            Effect.Ref.write (Just Data.List.Nil) pendingHandlers
+            Data.Traversable.traverse_ (Halogen.Aff.Driver.Eval.handleAff <<< Data.Traversable.traverse_ Control.Monad.Fork.Class.fork <<< Data.List.reverse) handlers
+            mmore <- Effect.Ref.read pendingHandlers
+            if maybe false Data.List.null mmore then
+              Effect.Ref.write Nothing pendingHandlers $> Control.Monad.Rec.Class.Done unit
+            else
+              pure $ Control.Monad.Rec.Class.Loop unit
 
   renderChild ::
     forall ps act.
@@ -170,8 +173,8 @@ runUI emit renderSpec component i = do
       Effect.Ref.modify_ (slot.set $ Halogen.Aff.Driver.State.DriverStateRef var) childrenOutRef
       Effect.Ref.read var
         >>= Halogen.Aff.Driver.State.renderStateX case _ of
-            Nothing -> Effect.Exception.throw "Halogen internal error: child was not initialized in renderChild"
-            Just r -> pure (renderSpec.renderChild r)
+          Nothing -> Effect.Exception.throw "Halogen internal error: child was not initialized in renderChild"
+          Just r -> pure (renderSpec.renderChild r)
 
   squashChildInitializers ::
     forall f' o'.
@@ -229,7 +232,8 @@ runUI emit renderSpec component i = do
   dispose disposed lchs dsx =
     Halogen.Aff.Driver.Eval.handleLifecycle lchs do
       Effect.Ref.read disposed
-        >>= if _ then
+        >>=
+          if _ then
             pure unit
           else do
             Effect.Ref.write true disposed

@@ -12,6 +12,7 @@ module Halogen.Test.Driver
   ) where
 
 import Pre
+
 import Data.Array as Data.Array
 import Data.Newtype as Data.Newtype
 import Data.Tuple as Data.Tuple
@@ -29,22 +30,20 @@ import Halogen.VDom.Thunk as Halogen.VDom.Thunk
 import Halogen.VDom.Util as Halogen.VDom.Util
 
 -- | Copied from `Halogen.VDom.Driver` which is not exported
-type VHTML action slots
-  = Halogen.VDom.VDom
-      (Array (Halogen.HTML.Core.Prop (Halogen.Query.Input.Input action)))
-      (Halogen.Component.ComponentSlot slots Aff action)
+type VHTML action slots = Halogen.VDom.VDom
+  (Array (Halogen.HTML.Core.Prop (Halogen.Query.Input.Input action)))
+  (Halogen.Component.ComponentSlot slots Aff action)
 
 -- | Adapted from `Halogen.VDom.Driver.ChildRenderer`
 -- | * replaced `RenderState` by our own definition
-type ChildRenderer action slots
-  = Halogen.Component.ComponentSlotBox slots Aff action ->
-    Effect (Halogen.Aff.Driver.State.RenderStateX RenderState)
+type ChildRenderer action slots =
+  Halogen.Component.ComponentSlotBox slots Aff action ->
+  Effect (Halogen.Aff.Driver.State.RenderStateX RenderState)
 
 -- | Adapted from `Halogen.VDom.Driver.RenderState`
 -- | * removed `node :: Web.DOM.Node.Node`
 -- | * set machine output to `Unit` in place of `Web.DOM.Node.Node`
-newtype RenderState state action slots output
-  = RenderState
+newtype RenderState state action slots output = RenderState
   { machine :: Halogen.VDom.Step (VHTML action slots) Unit
   , renderChildRef :: Effect.Ref.Ref (ChildRenderer action slots)
   }
@@ -101,14 +100,12 @@ render _handler renderChild (Halogen.HTML.Core.HTML vdom) = case _ of
 -- | Adapted from `Halogen.VDom.DOM.VDomMachine`
 -- | * set machine output to `Unit` in place of `Web.DOM.Node.Node`
 -- | * specialize `Halogen.VDom.VDom a w` to `VHTML action slots`
-type VDomMachine action slots
-  = Halogen.VDom.Machine (VHTML action slots) Unit
+type VDomMachine action slots = Halogen.VDom.Machine (VHTML action slots) Unit
 
 -- | Adapted from `Halogen.VDom.DOM.VDomStep`
 -- | * set machine output to `Unit` in place of `Web.DOM.Node.Node`
 -- | * specialize `Halogen.VDom.VDom a w` to `VHTML action slots`
-type VDomStep action slots
-  = Halogen.VDom.Step (VHTML action slots) Unit
+type VDomStep action slots = Halogen.VDom.Step (VHTML action slots) Unit
 
 -- | Adapted from `Halogen.VDom.DOM.buildVDom`
 buildVDom ::
@@ -131,9 +128,9 @@ buildVDom renderChildRef = build
 -- | * removed `node :: Web.DOM.Node.Node`
 -- | * removed `value :: String`
 -- |   * we don't need to compare and patch in DOM
-type TextState a w
-  = { build ∷ VDomMachine a w
-    }
+type TextState a w =
+  { build ∷ VDomMachine a w
+  }
 
 -- | Adapted from `Halogen.VDom.DOM.buildText`
 buildText ∷
@@ -180,10 +177,10 @@ haltText =
 -- |   * we don't need to register event handlers on DOM
 -- | * removed `ns` and `name`
 -- |   * we don't need to compare and patch in DOM
-type ElemState a w
-  = { build ∷ VDomMachine a w
-    , children ∷ Array (VDomStep a w)
-    }
+type ElemState a w =
+  { build ∷ VDomMachine a w
+  , children ∷ Array (VDomStep a w)
+  }
 
 -- | Adapted from `Halogen.VDom.DOM.buildElem`
 buildElem ∷
@@ -269,11 +266,11 @@ haltElem =
 -- |   * we don't need to register event handlers on DOM
 -- | * removed `ns` and `name`
 -- |   * we don't need to compare and patch in DOM
-type KeyedState a w
-  = { build ∷ VDomMachine a w
-    , children ∷ Foreign.Object.Object (VDomStep a w)
-    , length ∷ Int
-    }
+type KeyedState a w =
+  { build ∷ VDomMachine a w
+  , children ∷ Foreign.Object.Object (VDomStep a w)
+  , length ∷ Int
+  }
 
 -- | Adapted from `Halogen.VDom.DOM.buildKeyed`
 buildKeyed ∷
@@ -355,17 +352,16 @@ haltKeyed =
         Effect.Uncurried.runEffectFn1 Halogen.VDom.halt s
 
 -- | Combined `Halogen.VDom.Driver.WidgetState` and `Halogen.VDom.DOM.WidgetState`
-type WidgetState action slots
-  = { build ∷ VDomMachine action slots
-    , renderChildRef :: Effect.Ref.Ref (ChildRenderer action slots)
-    , widget ∷ Maybe (Halogen.VDom.Step (HTMLThunk action slots) Unit)
-    }
+type WidgetState action slots =
+  { build ∷ VDomMachine action slots
+  , renderChildRef :: Effect.Ref.Ref (ChildRenderer action slots)
+  , widget ∷ Maybe (Halogen.VDom.Step (HTMLThunk action slots) Unit)
+  }
 
 -- | Copied from Halogen.VDom.Driver which is not exported
-type HTMLThunk action slots
-  = Halogen.VDom.Thunk.Thunk
-      (Halogen.HTML.Core.HTML (Halogen.Component.ComponentSlot slots Aff action))
-      action
+type HTMLThunk action slots = Halogen.VDom.Thunk.Thunk
+  (Halogen.HTML.Core.HTML (Halogen.Component.ComponentSlot slots Aff action))
+  action
 
 -- | Adapted from `Halogen.VDom.Driver.mkSpec.buildWidget.render`
 buildWidget ∷
@@ -397,12 +393,12 @@ patchWidget =
       Effect.Uncurried.runEffectFn2 patchWidget state (Halogen.VDom.runGraft g)
     Halogen.VDom.Widget slot
       | Just step <- state.widget -> case slot of
-        Halogen.Component.ComponentSlot cs -> do
-          Effect.Uncurried.runEffectFn1 Halogen.VDom.halt step
-          Effect.Uncurried.runEffectFn2 renderComponentSlot state cs
-        Halogen.Component.ThunkSlot t -> do
-          step' <- Effect.Uncurried.runEffectFn2 Halogen.VDom.step step t
-          pure $ Halogen.VDom.mkStep $ Halogen.VDom.Step (Halogen.VDom.extract step') (state { widget = Just step' }) patchWidget haltWidget
+          Halogen.Component.ComponentSlot cs -> do
+            Effect.Uncurried.runEffectFn1 Halogen.VDom.halt step
+            Effect.Uncurried.runEffectFn2 renderComponentSlot state cs
+          Halogen.Component.ThunkSlot t -> do
+            step' <- Effect.Uncurried.runEffectFn2 Halogen.VDom.step step t
+            pure $ Halogen.VDom.mkStep $ Halogen.VDom.Step (Halogen.VDom.extract step') (state { widget = Just step' }) patchWidget haltWidget
     _ -> do
       Effect.Uncurried.runEffectFn1 haltWidget state
       Effect.Uncurried.runEffectFn1 state.build vdom
@@ -429,10 +425,10 @@ haltWidget =
 
 -- | Adapted from `Halogen.VDom.DOM.ThunkState`
 -- | * set machine output to `Unit` in place of `Web.DOM.Node.Node`
-type ThunkState (f :: Type -> Type) i a w
-  = { thunk ∷ Halogen.VDom.Thunk.Thunk f i
-    , vdom ∷ Halogen.VDom.Step (VHTML a w) Unit
-    }
+type ThunkState (f :: Type -> Type) i a w =
+  { thunk ∷ Halogen.VDom.Thunk.Thunk f i
+  , vdom ∷ Halogen.VDom.Step (VHTML a w) Unit
+  }
 
 -- | Adapted from `Halogen.VDom.Thunk.buildThunk`
 buildThunk ∷
