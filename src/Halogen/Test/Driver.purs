@@ -30,9 +30,10 @@ import Halogen.VDom.Thunk as Halogen.VDom.Thunk
 import Halogen.VDom.Util as Halogen.VDom.Util
 
 -- | Copied from `Halogen.VDom.Driver` which is not exported
-type VHTML action slots = Halogen.VDom.VDom
-  (Array (Halogen.HTML.Core.Prop (Halogen.Query.Input.Input action)))
-  (Halogen.Component.ComponentSlot slots Aff action)
+type VHTML action slots =
+  Halogen.VDom.VDom
+    (Array (Halogen.HTML.Core.Prop (Halogen.Query.Input.Input action)))
+    (Halogen.Component.ComponentSlot slots Aff action)
 
 -- | Adapted from `Halogen.VDom.Driver.ChildRenderer`
 -- | * replaced `RenderState` by our own definition
@@ -43,10 +44,11 @@ type ChildRenderer action slots =
 -- | Adapted from `Halogen.VDom.Driver.RenderState`
 -- | * removed `node :: Web.DOM.Node.Node`
 -- | * set machine output to `Unit` in place of `Web.DOM.Node.Node`
-newtype RenderState state action slots output = RenderState
-  { machine :: Halogen.VDom.Step (VHTML action slots) Unit
-  , renderChildRef :: Effect.Ref.Ref (ChildRenderer action slots)
-  }
+newtype RenderState state action slots output =
+  RenderState
+    { machine :: Halogen.VDom.Step (VHTML action slots) Unit
+    , renderChildRef :: Effect.Ref.Ref (ChildRenderer action slots)
+    }
 
 -- | Adapted from `Halogen.VDom.Driver.runUI`
 -- | * we reuse `Halogen.Aff.Driver.runUI` since it's all about component
@@ -100,12 +102,14 @@ render _handler renderChild (Halogen.HTML.Core.HTML vdom) = case _ of
 -- | Adapted from `Halogen.VDom.DOM.VDomMachine`
 -- | * set machine output to `Unit` in place of `Web.DOM.Node.Node`
 -- | * specialize `Halogen.VDom.VDom a w` to `VHTML action slots`
-type VDomMachine action slots = Halogen.VDom.Machine (VHTML action slots) Unit
+type VDomMachine action slots =
+  Halogen.VDom.Machine (VHTML action slots) Unit
 
 -- | Adapted from `Halogen.VDom.DOM.VDomStep`
 -- | * set machine output to `Unit` in place of `Web.DOM.Node.Node`
 -- | * specialize `Halogen.VDom.VDom a w` to `VHTML action slots`
-type VDomStep action slots = Halogen.VDom.Step (VHTML action slots) Unit
+type VDomStep action slots =
+  Halogen.VDom.Step (VHTML action slots) Unit
 
 -- | Adapted from `Halogen.VDom.DOM.buildVDom`
 buildVDom ::
@@ -359,9 +363,10 @@ type WidgetState action slots =
   }
 
 -- | Copied from Halogen.VDom.Driver which is not exported
-type HTMLThunk action slots = Halogen.VDom.Thunk.Thunk
-  (Halogen.HTML.Core.HTML (Halogen.Component.ComponentSlot slots Aff action))
-  action
+type HTMLThunk action slots =
+  Halogen.VDom.Thunk.Thunk
+    (Halogen.HTML.Core.HTML (Halogen.Component.ComponentSlot slots Aff action))
+    action
 
 -- | Adapted from `Halogen.VDom.Driver.mkSpec.buildWidget.render`
 buildWidget ∷
