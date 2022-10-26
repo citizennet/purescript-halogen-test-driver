@@ -5,7 +5,7 @@
       dependencies = with config.purs-nix.ps-pkgs; [
         halogen
         halogen-vdom
-        self'.packages.pre
+        pre
       ];
 
       ps = config.purs-nix.purs {
