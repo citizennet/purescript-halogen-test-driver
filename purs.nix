@@ -1,4 +1,3 @@
-{ pkgs, ... }:
 {
   name = "halogen-test-driver";
   srcs = [ "src" ];
