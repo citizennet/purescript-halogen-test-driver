@@ -2,10 +2,10 @@
   perSystem = { config, self', inputs', system, pkgs, ... }:
 
     let
-      dependencies = [
-        "halogen"
-        "halogen-vdom"
-        "pre"
+      dependencies = with config.purs-nix.ps-pkgs; [
+        halogen
+        halogen-vdom
+        pre
       ];
 
       ps = config.purs-nix.purs {
