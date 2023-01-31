@@ -6,9 +6,25 @@ let
 in
   { name
   , dependencies =
-      [ "halogen"
+      [ "aff"
+      , "arrays"
+      , "effect"
+      , "exceptions"
+      , "foldable-traversable"
+      , "foreign-object"
+      , "fork"
+      , "halogen"
+      , "halogen-subscriptions"
       , "halogen-vdom"
+      , "lists"
+      , "maybe"
+      , "newtype"
+      , "ordered-collections"
+      , "parallel"
       , "pre"
+      , "refs"
+      , "tailrec"
+      , "tuples"
       ]
   , packages = ../../packages.dhall
   -- Due to a spago bug (see https://github.com/purescript/spago/issues/648)
