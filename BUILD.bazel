@@ -7,7 +7,7 @@ purescript_lint(
     name = "purescript_lint",
     srcs = glob(
         include = [
-            "**/*.purs",
+            "src/**/*.purs",
         ],
     ),
 )
