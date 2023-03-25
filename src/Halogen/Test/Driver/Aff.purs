@@ -4,7 +4,7 @@ module Halogen.Test.Driver.Aff
   , runUI
   ) where
 
-import Pre
+import CitizenNet.Prelude
 
 import Control.Monad.Fork.Class as Control.Monad.Fork.Class
 import Control.Monad.Rec.Class as Control.Monad.Rec.Class

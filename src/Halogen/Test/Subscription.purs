@@ -5,7 +5,7 @@ module Halogen.Test.Subscription
   , subscribe
   ) where
 
-import Pre
+import CitizenNet.Prelude
 
 import Halogen as Halogen
 import Halogen.HTML as Halogen.HTML

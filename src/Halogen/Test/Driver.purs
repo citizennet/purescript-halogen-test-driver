@@ -11,7 +11,7 @@ module Halogen.Test.Driver
   , runUI
   ) where
 
-import Pre
+import CitizenNet.Prelude
 
 import Data.Array as Data.Array
 import Data.Newtype as Data.Newtype
