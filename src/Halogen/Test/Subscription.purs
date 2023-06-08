@@ -24,7 +24,7 @@ data Query (a :: Type)
 
 -- | A component that listens to a `Halogen.Subscription.Emitter` and lets one
 -- | choose what to do with emitted values in a `HalogenM` context. This is used
--- | to test form state updates in the `Form2.Managed.Halogen` component.
+-- | to test form state updates in the `Formlet.Managed.Halogen` component.
 component ::
   forall a m output query.
   Halogen.Subscription.Emitter a ->
